@@ -1,0 +1,5 @@
+dependencies:
+  - spacy
+  - ujson
+  - pip:
+    - google-cloud
