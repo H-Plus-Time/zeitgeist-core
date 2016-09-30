@@ -1,5 +1,5 @@
 import spacy
-from mem_top import mem_top
+# from mem_top import mem_top
 import os
 import functools
 import pubmed_parser as pp

@@ -1,0 +1,25 @@
+{
+  "name": "zeitgeist-core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "gremlin-worker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/H-Plus-Time/zeitgeist-core.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/H-Plus-Time/zeitgeist-core/issues"
+  },
+  "homepage": "https://github.com/H-Plus-Time/zeitgeist-core#readme",
+  "dependencies": {
+    "asyncawait": "^1.0.6",
+    "gremlin": "^2.3.2",
+    "underscore": "^1.8.3",
+    "zerorpc": "^0.9.6"
+  }
+}
