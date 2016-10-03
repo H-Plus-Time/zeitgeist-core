@@ -18,7 +18,10 @@
   "homepage": "https://github.com/H-Plus-Time/zeitgeist-core#readme",
   "dependencies": {
     "asyncawait": "^1.0.6",
-    "gremlin": "^2.3.2",
+    "bluebird": "^3.4.6",
+    "cors": "^2.8.1",
+    "express": "^4.14.0",
+    "gremlin": "file:gremlin-javascript",
     "underscore": "^1.8.3",
     "zerorpc": "^0.9.6"
   }
