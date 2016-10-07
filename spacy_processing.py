@@ -9,7 +9,7 @@ import sys
 import ujson as json
 from ctypes import c_char_p, cdll
 
-gremlin = cdll.LoadLibrary('./libgremlin.so')
+gremlin = cdll.LoadLibrary('./pylib/libgremlin.so')
 
 def read_wrapper(path):
     f = open(path, "r")
@@ -40,7 +40,7 @@ def path_proc(filelist):
 
 
 def main(root_dir):
-    gremlin.connect()
+    # gremlin.connect()
     nlp = spacy.load('en')
 
     # paths = functools.reduce(
@@ -62,7 +62,7 @@ def main(root_dir):
     #         print(i)
 
     temp_paths = functools.reduce(
-        lambda x, y: x + y, map(lambda x: next(paths), range(10)))
+        lambda x, y: x + y, map(lambda x: next(paths), range(20)))
     texts = map(lambda x: x, temp_paths)
 
     deposit_article_keys = ["pmid", "journal", "full_title", "pmc",
@@ -79,16 +79,18 @@ def main(root_dir):
         art_dict['kwset'] = nounset
         # client.put(
             # generate_noun_chunkset_entity(nounset, art_dict, client))
-        gremlin.deposit_article(json.dumps({ k: art_dict[k] for k in deposit_article_keys }))
+        gremlin.deposit_article(c_char_p(bytes(json.dumps(
+            { k: art_dict[k] for k in deposit_article_keys }), "utf-8")))
 
         # Dump noun_chunks as K(art_pmid):V(noun_chunk)
 
+
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
-            print(art_dict.keys())
-            print(list(doc.noun_chunks))
-            print(doc.ents)
-            print(len(doc.ents))
+            # print(art_dict.keys())
+            # print(list(doc.noun_chunks))
+            # print(doc.ents)
+            # print(len(doc.ents))
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
