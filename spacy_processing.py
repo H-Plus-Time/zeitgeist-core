@@ -62,7 +62,7 @@ def main(root_dir):
     #         print(i)
 
     temp_paths = functools.reduce(
-        lambda x, y: x + y, map(lambda x: next(paths), range(20)))
+        lambda x, y: x + y, map(lambda x: next(paths), range(5)))
     texts = map(lambda x: x, temp_paths)
 
     deposit_article_keys = ["pmid", "journal", "full_title", "pmc",

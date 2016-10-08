@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/go-gremlin/gremlin"
@@ -45,8 +46,8 @@ func deposit_keywords(kw string, id string) {
 	retries := 0
 	for retries < 5 {
 		data, err := gremlin.Query(`g.V(g.V().has("keyword", "content", \
-			_keyword).tryNext().orElse(g.addV(label, "keyword", "content", \
-				_keyword))).addE('occurs_in').to(g.V(_article_id))`).Bindings(
+			_keyword).tryNext().orElseGet({return g.addV(label, "keyword", "content", \
+				_keyword).next()})).addE('occurs_in').to(g.V(_article_id))`).Bindings(
 			gremlin.Bind{"_keyword": kw, "_article_id": id}).Exec()
 		// fmt.Println(string(data))
 		retries += 1
@@ -103,8 +104,8 @@ func deposit_article(articleJSON *C.char) *C.char {
 		go func(kw string, id string) {
 			defer func() { <-sem }()
 			deposit_keywords(kw, id)
-		}(kw, string(data))
-		// go deposit_keywords(kw, string(data))
+		}(kw, strings.Replace(strings.Replace(string(data), "[", "", 1), "]", "", 1))
+		// go deposit_keywords(kw, strings.Replace(strings.Replace(string(data), "[", "", 1), "]", "", 1))
 		// fmt.Println(string(data))
 	}
 
