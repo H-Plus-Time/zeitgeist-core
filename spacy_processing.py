@@ -60,27 +60,20 @@ def main(root_dir):
     # gremlin.connect()
     nlp = spacy.load('en')
 
-    # paths = functools.reduce(
-    #     lambda x,y: x + y, filter(
-    #         lambda x: len(x) > 0, map(
-    #             lambda entr: path_proc(entr), os.walk(root_dir)
-    #         )
-    #     )
-    # )
+    paths = functools.reduce(
+        lambda x,y: x + y, filter(
+            lambda x: len(x) > 0, map(
+                lambda entr: path_proc(entr), os.walk(root_dir)
+            )
+        )
+    )
     paths = filter(
         lambda x: len(x) > 0, map(
             lambda entr: path_proc(entr), os.walk(root_dir)
         )
     )
-    # print(len(paths))
-    # print(mem_top())
-    # for i, doc in enumerate(texts):
-    #     if i % 1000 == 0:
-    #         print(i)
-
-    temp_paths = functools.reduce(
-        lambda x, y: x + y, map(lambda x: next(paths), range(5)))
-    texts = map(lambda x: x, temp_paths)
+    print(len(paths))
+    texts = map(lambda x: x, paths)
 
     deposit_article_keys = ["pmid", "journal", "full_title", "pmc",
         "publisher_id", "author_list", "affiliation_list",

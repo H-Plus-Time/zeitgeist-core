@@ -58,14 +58,13 @@ def deposit_article(session, article):
 
 
 def deposit_keywords(session, keyword_file):
-    kw_id_pairs = []
-    with open(keyword_file, "r") as f:
-        for kw in json.load(f):
-            result = session.execute_graph('g.addV(label, "keyword",\
-                "content", _content, "tag", _tag).next()',
-                {"_content": kw.word, "_tag": kw.tag},
-                execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)
-            kw_id_pairs.append((kw, result.id))
+    for kw_dict in keywords:
+        result = session.execute_graph('g.V(g.V().has("keyword", "content", \
+            _keyword, "tag", _tag).tryNext().orElseGet({return g.addV(label,\
+            "keyword", "content", _keyword, "tag", _tag).next()}))\
+            .addE('occurs_in').to(g.V(_article_id))', {"_keyword": kw_dict.word,
+             "_tag": kw_dict.tag},
+            execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)
 
 
 def main(root_dir):
