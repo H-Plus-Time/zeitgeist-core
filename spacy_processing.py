@@ -90,15 +90,18 @@ def main(root_dir):
     start = time.time()
     client = datastore.Client()
     kws = []
+    num_skipped = 0
     for i, path in enumerate(texts):
         art_dict = pp.parse_pubmed_xml(path)
         doc = nlp(art_dict['abstract'])
         nounset = nounset_to_list(doc.noun_chunks)
         # art_dict['kwset'] = nounset
         tagged_json = tagged_doc_to_json(doc)
-        client.put(
-            generate_tagged_entity(tagged_json, art_dict, client))
-
+        try:
+            client.put(
+                generate_tagged_entity(tagged_json, art_dict, client))
+        except e:
+            num_skipped += 1
         # c.deposit_article(art_dict)
         # kws.append(tagged_json)
 
@@ -127,6 +130,7 @@ def main(root_dir):
             # print(list(doc.noun_chunks))
             # print(doc.ents)
             # print(len(doc.ents))
+    print("Number skipped: {}".format(num_skipped))
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
