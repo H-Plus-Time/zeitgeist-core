@@ -13,6 +13,7 @@ class Gremlin(object):
             password=os.environ['CASSANDRA_PASSWORD'])
         self.cluster = Cluster(cluster_ips, auth_provider=auth_provider)
         self.session = self.cluster.connect()
+        print("Connected")
     def add_man(self, sentence):
         """ End a sentence with ", man!" to make it sound cooler, and
         return the result. """
@@ -31,10 +32,10 @@ class Gremlin(object):
     def deposit_article(article_json):
         result = self.session.execute_graph('g.addV(label, "article", "pmid",\
             _pmid, "pmc", _pmc, "doi", _doi, "full_title", _full_title, \
-            "publication_year", _publication_year).next()', {"_pmid": article.pmid,
-                "_pmc": article.pmc, "_doi": article.doi,
-                "_full_title": article.full_title,
-                "_publication_year": article.publication_year},
+            "publication_year", _publication_year).next()', {"_pmid": article['pmid'],
+                "_pmc": article['pmc'], "_doi": article['doi'],
+                "_full_title": article['full_title'],
+                "_publication_year": article['publication_year']},
             execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)
         return result.id
 
