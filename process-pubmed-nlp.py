@@ -46,9 +46,8 @@ def deposit_article(session, article):
     result = session.execute_graph('g.V().has("article", "pmid",\
     _pmid, "pmc", _pmc).has("doi", _doi).tryNext().orElse(g.addV(label,\
     "article", "pmid",_pmid, "pmc", _pmc, "doi", _doi, "full_title",\
-    _full_title, "publication_year", _publication_year)
-    ).id()', {"_pmid": article['pmid'],
-       "_pmc": article['pmc'], "_doi": article['doi'],
+    _full_title, "publication_year", _publication_year)).id()',
+    {"_pmid": article['pmid'], "_pmc": article['pmc'], "_doi": article['doi'],
        "_full_title": article['full_title'],
        "_publication_year": article['publication_year']},
     execution_profile=EXEC_PROFILE_GRAPH_DEFAULT
