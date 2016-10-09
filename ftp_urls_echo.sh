@@ -1,4 +1,4 @@
-echo ./untar_and_gsutil.sh A-B
-echo ./untar_and_gsutil.sh C-H
-echo ./untar_and_gsutil.sh I-N
-echo ./untar_and_gsutil.sh O-Z
+echo ./untar.sh A-B
+echo ./untar.sh C-H
+echo ./untar.sh I-N
+echo ./untar.sh O-Z
