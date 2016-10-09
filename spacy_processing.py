@@ -2,12 +2,15 @@ import spacy
 # from mem_top import mem_top
 import os
 import functools
+import csv
 import pubmed_parser as pp
 import time
 from google.cloud import datastore
 import sys
 import ujson as json
 from ctypes import c_char_p, cdll
+import zerorpc
+
 
 gremlin = cdll.LoadLibrary('./pylib/libgremlin.so')
 
@@ -24,11 +27,11 @@ def nounset_to_list(noun_chunks):
     return list(map(lambda x: x.text_with_ws, noun_chunks))
 
 def tagged_doc_to_json(doc):
-    return json.dumps([{'text': w.text, 'tag': w.tag_} for w in doc])
+    return [{'text': w.text, 'tag': w.tag_} for w in doc]
 
 def generate_tagged_entity(tagged_doc, article_details, client):
     entity = datastore.Entity(client.key('tagged_document'), exclude_from_indexes=['doc'])
-    entity['doc'] = tagged_doc
+    entity['doc'] = json.dumps(tagged_doc)
     entity['pmid'] = article_details['pmid']
     entity['pmc'] = article_details['pmc']
     entity['doi'] = article_details['doi']
@@ -52,6 +55,8 @@ def path_proc(filelist):
 
 
 def main(root_dir):
+    c = zerorpc.Client()
+    c.connect("tcp://127.0.0.1:4242")
     # gremlin.connect()
     nlp = spacy.load('en')
 
@@ -84,14 +89,27 @@ def main(root_dir):
     # Just do it single-threaded
     start = time.time()
     client = datastore.Client()
+    kws = []
     for i, path in enumerate(texts):
         art_dict = pp.parse_pubmed_xml(path)
         doc = nlp(art_dict['abstract'])
         nounset = nounset_to_list(doc.noun_chunks)
         # art_dict['kwset'] = nounset
         tagged_json = tagged_doc_to_json(doc)
-        client.put(
-            generate_tagged_entity(tagged_json, art_dict, client))
+        # client.put(
+            # generate_tagged_entity(tagged_json, art_dict, client))
+
+        c.deposit_article(art_dict)
+        kws.append(tagged_json)
+
+        # deposit article -> ((pmc, pmid, doi), vert_id)
+        # dump Keywords
+        # deposit keyword -> (keyword, vert_id)
+        # sort *.out | uniq >> comb.out
+        # py read arts, read Keywords
+        # for art in arts:
+        #   for keyword in art.keywords:
+        #       addE('occurs_in', keyword.id, art.id)
         # gremlin.deposit_article(c_char_p(bytes(json.dumps(
             # { k: art_dict[k] for k in deposit_article_keys }), "utf-8")))
 
@@ -100,6 +118,11 @@ def main(root_dir):
 
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
+            with open("keywords/{}.json".format(time.time()), "w") as f:
+                for item in kws:
+                    for kw in item:
+                        f.write('"{}", "{}"\n'.format(kw['text'], kw['tag']))
+
             # print(art_dict.keys())
             # print(list(doc.noun_chunks))
             # print(doc.ents)
