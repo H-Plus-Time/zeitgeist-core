@@ -44,26 +44,26 @@ def path_proc(filelist):
 def deposit_article(session, article):
     print(article)
     result = session.execute_graph('g.V().has("article", "pmid",\
-    _pmid, "pmc", _pmc).has("doi", _doi).tryNext().orElse(g.addV(label,\
+    _pmid).has("pmc", _pmc).has("doi", _doi).tryNext().orElse(g.addV(label,\
     "article", "pmid",_pmid, "pmc", _pmc, "doi", _doi, "full_title",\
-    _full_title, "publication_year", _publication_year)).id()',
+    _full_title, "publication_year", _publication_year))',
     {"_pmid": article['pmid'], "_pmc": article['pmc'], "_doi": article['doi'],
        "_full_title": article['full_title'],
        "_publication_year": article['publication_year']},
     execution_profile=EXEC_PROFILE_GRAPH_DEFAULT
     )
-    return results[0]
+    return result[0]
 
 
 
 def deposit_keywords(session, keywords, article):
     for kw_dict in keywords:
         result = session.execute_graph('g.V(g.V().has("keyword", "content", \
-            _keyword, "tag", _tag).tryNext().orElseGet({return g.addV(label,\
+            _keyword).has("tag", _tag).tryNext().orElseGet({return g.addV(label,\
             "keyword", "content", _keyword, "tag", _tag).next()}))\
-            .addE('occurs_in').to(g.V(_article_id))', {"_keyword": kw_dict.word,
-             "_tag": kw_dict.tag, "_article_id": article.id},
-            execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)
+            .addE("occurs_in").to(g.V(_article_id))', {"_keyword": kw_dict['text'],
+             "_tag": kw_dict['tag'], "_article_id": article.id},
+            execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
 
 
 def main(root_dir):
@@ -96,12 +96,12 @@ def main(root_dir):
     client = datastore.Client()
     for i, path in enumerate(texts):
         art_dict = pp.parse_pubmed_xml(path)
-        doc = nlp(art_dict['abstract'])
+        doc = nlp(unicode(art_dict['abstract']))
         nounset = nounset_to_list(doc.noun_chunks)
         # art_dict['kwset'] = nounset
         tagged_json = tagged_doc_to_json(doc)
         article = deposit_article(session, art_dict)
-        for kw_dict in result['tagged_document']:
+        for kw_dict in tagged_json:
             deposit_keywords(session, tagged_json, article)
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))

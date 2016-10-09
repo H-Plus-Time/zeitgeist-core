@@ -87,8 +87,8 @@ def main(root_dir):
         try:
             client.put(
                 generate_tagged_entity(tagged_json, art_dict, client))
-        except e:
-            num_skipped += 1
+        except Exception as e:
+            += 1
         # c.deposit_article(art_dict)
         # kws.append(tagged_json)
 
