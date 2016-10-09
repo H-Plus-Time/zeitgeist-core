@@ -23,6 +23,18 @@ def extract_abstract(path):
 def nounset_to_list(noun_chunks):
     return list(map(lambda x: x.text_with_ws, noun_chunks))
 
+def tagged_doc_to_json(doc):
+    return json.dumps([{'text': w.text, 'tag': w.tag_} for w in doc])
+
+def generate_tagged_entity(tagged_doc, article_details, client):
+    entity = datastore.Entity(client.key('tagged_document'), exclude_from_indexes=['doc'])
+    entity['doc'] = tagged_doc
+    entity['pmid'] = article_details['pmid']
+    entity['pmc'] = article_details['pmc']
+    entity['doi'] = article_details['doi']
+    entity['full_title'] = article_details['full_title']
+    return entity
+
 def generate_noun_chunkset_entity(noun_chunkset, article_details, client):
     entity = datastore.Entity(client.key('noun_chunks'))
     entity['chunks'] = noun_chunkset
@@ -76,11 +88,12 @@ def main(root_dir):
         art_dict = pp.parse_pubmed_xml(path)
         doc = nlp(art_dict['abstract'])
         nounset = nounset_to_list(doc.noun_chunks)
-        art_dict['kwset'] = nounset
-        # client.put(
-            # generate_noun_chunkset_entity(nounset, art_dict, client))
-        gremlin.deposit_article(c_char_p(bytes(json.dumps(
-            { k: art_dict[k] for k in deposit_article_keys }), "utf-8")))
+        # art_dict['kwset'] = nounset
+        tagged_json = tagged_doc_to_json(doc)
+        client.put(
+            generate_tagged_entity(tagged_json, art_dict, client))
+        # gremlin.deposit_article(c_char_p(bytes(json.dumps(
+            # { k: art_dict[k] for k in deposit_article_keys }), "utf-8")))
 
         # Dump noun_chunks as K(art_pmid):V(noun_chunk)
 
