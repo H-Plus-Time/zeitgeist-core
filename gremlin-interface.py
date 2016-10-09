@@ -1,7 +1,7 @@
 import zerorpc
 import os
 from dse.auth import DSEPlainTextAuthProvider
-from dse.cluster import *
+from dse.cluster import Cluster, GraphExecutionProfile, EXEC_PROFILE_GRAPH_DEFAULT
 
 class Gremlin(object):
     """ Various convenience methods to make things cooler. """
@@ -11,32 +11,31 @@ class Gremlin(object):
         auth_provider = DSEPlainTextAuthProvider(
             username=os.environ['CASSANDRA_USER'],
             password=os.environ['CASSANDRA_PASSWORD'])
-        self.cluster = Cluster(cluster_ips, auth_provider=auth_provider)
-        self.session = self.cluster.connect()
-        self.session.execute_graph("system.graph(name).ifNotExists().create()",
-            {"name": "zeitgeist"}, execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)
-        self.ep = self.session.execution_profile_clone_update(
-            EXEC_PROFILE_GRAPH_DEFAULT,
-            graph_options=GraphOptions(graph_name='zeitgeist')
+        graph_name = "zeitgeist"
+        ep = GraphExecutionProfile(graph_options=GraphOptions(
+            graph_name=graph_name))
+        self.cluster = Cluster(cluster_ips, auth_provider=auth_provider,
+            execution_profiles={EXEC_PROFILE_GRAPH_DEFAULT: ep}
         )
+        self.session = self.cluster.connect()
+
+        self.session.execute_graph("system.graph(name).ifNotExists().create()",
+            {"name": "zeitgeist"},
+            execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)
         print("Connected")
 
     def deposit_article(self, article):
         print(article)
-        print(type(article))
-        print(article.keys())
-        print(self.session)
-        print(self.session.execute_graph('1+1')[0])
-        #result = self.session.execute_graph('g.addV(label, "article", "pmid",\
-         #   _pmid, "pmc", _pmc, "doi", _doi, "full_title", _full_title, \
-          #  "publication_year", _publication_year)', {"_pmid": article['pmid'],
-          #  "_pmc": article['pmc'], "_doi": article['doi'],
-          #  "_full_title": article['full_title'],
-          #  "_publication_year": article['publication_year']},
-        #execution_profile=ep
-        #)
-        results = self.session.execute_graph('g.addV()')
-        print(results[0])
+        result = self.session.execute_graph('g.addV(label, "article", "pmid",\
+           _pmid, "pmc", _pmc, "doi", _doi, "full_title", _full_title, \
+           "publication_year", _publication_year)', {"_pmid": article['pmid'],
+           "_pmc": article['pmc'], "_doi": article['doi'],
+           "_full_title": article['full_title'],
+           "_publication_year": article['publication_year']},
+        execution_profile=EXEC_PROFILE_GRAPH_DEFAULT
+        )
+        # results = self.session.execute_graph('g.addV()')
+        print(list(result))
         return "sdf"
 
     def deposit_keywords(keyword_file):
