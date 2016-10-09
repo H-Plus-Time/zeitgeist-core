@@ -53,17 +53,17 @@ def deposit_article(session, article):
        "_publication_year": article['publication_year']},
     execution_profile=EXEC_PROFILE_GRAPH_DEFAULT
     )
-    print(list(result))
+    return results[0]
 
 
 
-def deposit_keywords(session, keyword_file):
+def deposit_keywords(session, keywords, article):
     for kw_dict in keywords:
         result = session.execute_graph('g.V(g.V().has("keyword", "content", \
             _keyword, "tag", _tag).tryNext().orElseGet({return g.addV(label,\
             "keyword", "content", _keyword, "tag", _tag).next()}))\
             .addE('occurs_in').to(g.V(_article_id))', {"_keyword": kw_dict.word,
-             "_tag": kw_dict.tag},
+             "_tag": kw_dict.tag, "_article_id": article.id},
             execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)
 
 
@@ -101,9 +101,9 @@ def main(root_dir):
         nounset = nounset_to_list(doc.noun_chunks)
         # art_dict['kwset'] = nounset
         tagged_json = tagged_doc_to_json(doc)
-        deposit_article(session, art_dict)
+        article = deposit_article(session, art_dict)
         for kw_dict in result['tagged_document']:
-            deposit_keywords(session, keyword_file)
+            deposit_keywords(session, tagged_json, article)
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
 
