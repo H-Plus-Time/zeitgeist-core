@@ -67,12 +67,6 @@ def main(root_dir):
             )
         )
     )
-    paths = filter(
-        lambda x: len(x) > 0, map(
-            lambda entr: path_proc(entr), os.walk(root_dir)
-        )
-    )
-    print(len(paths))
     texts = map(lambda x: x, paths)
 
     deposit_article_keys = ["pmid", "journal", "full_title", "pmc",
