@@ -9,8 +9,8 @@ class Gremlin(object):
     def __init__(self):
         cluster_ips = ['10.128.0.2', '10.128.0.5', '10.128.0.4']
         auth_provider = DSEPlainTextAuthProvider(
-            username=os.environ['CASSANDRA_USER'],
-            password=os.environ['CASSANDRA_PASSWORD'])
+        username=os.environ['CASSANDRA_USER'],
+        password=os.environ['CASSANDRA_PASSWORD'])
         graph_name = "zeitgeist"
         ep = GraphExecutionProfile(graph_options=GraphOptions(
             graph_name=graph_name))
@@ -26,9 +26,11 @@ class Gremlin(object):
 
     def deposit_article(self, article):
         print(article)
-        result = self.session.execute_graph('g.addV(label, "article", "pmid",\
-           _pmid, "pmc", _pmc, "doi", _doi, "full_title", _full_title, \
-           "publication_year", _publication_year)', {"_pmid": article['pmid'],
+        result = self.session.execute_graph('g.V().has("article", "pmid",\
+        _pmid, "pmc", _pmc).has("doi", _doi).tryNext().orElse(g.addV(label,\
+        "article", "pmid",_pmid, "pmc", _pmc, "doi", _doi, "full_title",\
+        _full_title, "publication_year", _publication_year)
+        ).id()', {"_pmid": article['pmid'],
            "_pmc": article['pmc'], "_doi": article['doi'],
            "_full_title": article['full_title'],
            "_publication_year": article['publication_year']},

@@ -96,11 +96,11 @@ def main(root_dir):
         nounset = nounset_to_list(doc.noun_chunks)
         # art_dict['kwset'] = nounset
         tagged_json = tagged_doc_to_json(doc)
-        # client.put(
-            # generate_tagged_entity(tagged_json, art_dict, client))
+        client.put(
+            generate_tagged_entity(tagged_json, art_dict, client))
 
-        c.deposit_article(art_dict)
-        kws.append(tagged_json)
+        # c.deposit_article(art_dict)
+        # kws.append(tagged_json)
 
         # deposit article -> ((pmc, pmid, doi), vert_id)
         # dump Keywords
@@ -118,10 +118,10 @@ def main(root_dir):
 
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
-            with open("keywords/{}.json".format(time.time()), "w") as f:
-                for item in kws:
-                    for kw in item:
-                        f.write('"{}", "{}"\n'.format(kw['text'], kw['tag']))
+            # with open("keywords/{}.json".format(time.time()), "w") as f:
+                # for item in kws:
+                    # for kw in item:
+                        # f.write('"{}", "{}"\n'.format(kw['text'], kw['tag']))
 
             # print(art_dict.keys())
             # print(list(doc.noun_chunks))
