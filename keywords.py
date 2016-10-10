@@ -93,6 +93,13 @@ def main(root_dir):
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
 
+    pairs = map(lambda y: {"text": y[0], "tag": y[1]},
+        set(map(lambda x: (x['text'], x['tag']), kws)))
+
+    with open("keywords-{}.json".format(time.time()), "w") as f:
+        json.dump(pairs, f)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1])
