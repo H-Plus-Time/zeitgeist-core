@@ -42,7 +42,8 @@ def path_proc(filelist):
     return list(paths)
 
 def deposit_article(session, article):
-    print(article)
+    if article['pmid'] == "":
+        article['pmid'] = -1
     result = session.execute_graph('g.V().has("article", "pmid",\
     _pmid).has("pmc", _pmc).has("doi", _doi).tryNext().orElse(g.addV(label,\
     "article", "pmid",_pmid, "pmc", _pmc, "doi", _doi, "full_title",\
@@ -58,12 +59,16 @@ def deposit_article(session, article):
 
 def deposit_keywords(session, keywords, article):
     for kw_dict in keywords:
-        result = session.execute_graph('g.V(g.V().has("keyword", "content", \
+        result = session.execute_graph('g.V().has("keyword", "content", \
             _keyword).has("tag", _tag).tryNext().orElseGet({return g.addV(label,\
-            "keyword", "content", _keyword, "tag", _tag).next()}))\
-            .addE("occurs_in").to(g.V(_article_id))', {"_keyword": kw_dict['text'],
+            "keyword", "content", _keyword, "tag", _tag).next()})', {"_keyword": kw_dict['text'],
              "_tag": kw_dict['tag'], "_article_id": article.id},
             execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
+        kw_id = result[0].id
+        eresult = session.execute_graph('if(!g.V(_kw_id).outE("occurs_in").has(id,\
+            _article_id).hasNext()) { g.V(_kw_id).addE("occurs_in").to(\
+            g.V(_article_id)) }', {"_kw_id": kw_id,
+            "_article_id": article.id},execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
 
 
 def main(root_dir):
@@ -101,8 +106,9 @@ def main(root_dir):
         # art_dict['kwset'] = nounset
         tagged_json = tagged_doc_to_json(doc)
         article = deposit_article(session, art_dict)
-        for kw_dict in tagged_json:
-            deposit_keywords(session, tagged_json, article)
+        #pairs = map(lambda y: {"text": y[0], "tag": y[1]},
+        #     set(map(lambda x: (x['text'], x['tag']), tagged_json)))
+        #deposit_keywords(session, pairs, article)
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
 
