@@ -51,10 +51,10 @@ def deposit_keywords(session, keywords):
 
 def associate_keywords_to_articles(session, article_kw_pairs):
     for kw_art in article_kw_pairs:
-        result = session.execute_graph('if(kw = g.V().has("keyword", "content", \
-            _keyword).has("tag", _tag).tryNext().orElse() != null && art = \
+        result = session.execute_graph('kw = g.V().has("keyword", "content", \
+            _keyword).has("tag", _tag).tryNext().orElse(); art = \
             g.V().has("article", "pmid", _pmid).has("pmc", _pmc).has("doi", \
-            _doi).tryNext().orElse() != null) {\
+            _doi).tryNext().orElse(); if(kw && art) {\
             g.V(kw).addE("occurs_in").to(g.V(art))}', {"_keyword":
             kw_art[0]['text'], "_tag":  kw_art[0]['tag'], "_pmid":  kw_art[1][0],
             "_pmc":  kw_art[1][1], "_doi": kw_art[1][2]},
