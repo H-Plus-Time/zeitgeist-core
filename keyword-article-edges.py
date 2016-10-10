@@ -85,8 +85,8 @@ def main(root_dir):
         art_dict = pp.parse_pubmed_xml(path)
         doc = nlp(unicode(art_dict['abstract']))
 
-        all(map(lambda x: article_kw_pairs.append((x), (art_dict['pmid'],
-            art_dict['pmc'], art_dict['doi'])), tagged_doc_to_json(doc)))
+        all(map(lambda x: article_kw_pairs.append(((x), (art_dict['pmid'],
+            art_dict['pmc'], art_dict['doi']))), tagged_doc_to_json(doc)))
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
             print(article_pw_pairs)
