@@ -88,10 +88,15 @@ def main(root_dir):
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
 
-    pairs = map(lambda y: {"text": y[0], "tag": y[1]},
-        set(map(lambda x: (x['text'], x['tag']), kws)))
+        if i % 2000 == 0:
+            pairs = map(lambda y: {"text": y[0], "tag": y[1]},
+                set(map(lambda x: (x['text'], x['tag']), kws)))
+            deposit_keywords(session, pairs)
+            kws = []
 
-    deposit_keywords(session, pairs)
+
+
+
 
 
 if __name__ == "__main__":
