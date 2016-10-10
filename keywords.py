@@ -46,7 +46,7 @@ def deposit_keywords(session, keywords):
         result = session.execute_graph('g.V().has("keyword", "content", \
             _keyword).has("tag", _tag).tryNext().orElseGet({return g.addV(label,\
             "keyword", "content", _keyword, "tag", _tag).next()})', {"_keyword": kw_dict['text'],
-             "_tag": kw_dict['tag'], "_article_id": article.id},
+             "_tag": kw_dict['tag']},
             execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
 
 
