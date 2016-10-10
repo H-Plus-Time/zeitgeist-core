@@ -1,3 +1,4 @@
+import os
 import falcon
 import json
 from dse.auth import *
@@ -17,6 +18,7 @@ class ArticleResource:
             execution_profiles={EXEC_PROFILE_GRAPH_DEFAULT: ep}
         )
         self.session = cluster.connect()
+        self.session.default_graph_row_factory=graph.single_object_row_factory()
 
     def on_get(self, req, resp):
         """Handles GET requests"""
@@ -25,9 +27,11 @@ class ArticleResource:
             'author': 'Grace Hopper'
         }
         # hardcode it for the moment
-        result = self.session.execute_graph('g.E().range(0 20).inV().inE().subgraph("t").cap("t").next()', {},
+        result = self.session.execute_graph('g.E().range(0, 20).inV().inE().subgraph("t").cap("t").next()', {},
             execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
-        resp.body = json.dumps(result)
+        print(dir(result))
+        print(map(lambda x: x.next(), result))
+        #resp.body = json.dumps(list(result))
 
 
 
