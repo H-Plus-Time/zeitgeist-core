@@ -41,18 +41,13 @@ def path_proc(filelist):
         filter(lambda x: x.endswith('.nxml'), filelist[-1]))
     return list(paths)
 
-def deposit_keywords(session, keywords, article):
+def deposit_keywords(session, keywords):
     for kw_dict in keywords:
         result = session.execute_graph('g.V().has("keyword", "content", \
             _keyword).has("tag", _tag).tryNext().orElseGet({return g.addV(label,\
             "keyword", "content", _keyword, "tag", _tag).next()})', {"_keyword": kw_dict['text'],
              "_tag": kw_dict['tag'], "_article_id": article.id},
             execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
-        kw_id = result[0].id
-        eresult = session.execute_graph('if(!g.V(_kw_id).outE("occurs_in").has(id,\
-            _article_id).hasNext()) { g.V(_kw_id).addE("occurs_in").to(\
-            g.V(_article_id)) }', {"_kw_id": kw_id,
-            "_article_id": article.id},execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
 
 
 def main(root_dir):
@@ -76,7 +71,7 @@ def main(root_dir):
         )
     )
 
-    texts = map(lambda x: pp.parse_pubmed_xml(x)['abstract'], paths)
+    texts = map(lambda x: x, paths)
     deposit_article_keys = ["pmid", "journal", "full_title", "pmc",
         "publisher_id", "author_list", "affiliation_list",
         "kwset", "publication_year", "doi"]
@@ -84,7 +79,11 @@ def main(root_dir):
     start = time.time()
     client = datastore.Client()
     kws = []
-    for i, doc in enumerate(nlp.pipe(texts, batch_size=50, n_threads=4)):
+    for i, path in enumerate(texts):
+        art_dict = pp.parse_pubmed_xml(path)
+        doc = nlp(unicode(art_dict['abstract']))
+        nounset = nounset_to_list(doc.noun_chunks)
+        # art_dict['kwset'] = nounset
         all(map(lambda x: kws.append(x), tagged_doc_to_json(doc)))
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
@@ -92,8 +91,7 @@ def main(root_dir):
     pairs = map(lambda y: {"text": y[0], "tag": y[1]},
         set(map(lambda x: (x['text'], x['tag']), kws)))
 
-    with open("keywords-{}.json".format(time.time()), "w") as f:
-        json.dump(pairs, f)
+    deposit_keywords(session, pairs)
 
 
 if __name__ == "__main__":
