@@ -76,7 +76,7 @@ def main(root_dir):
         )
     )
 
-    texts = map(lambda x: x, paths)
+    texts = map(lambda x: pp.parse_pubmed_xml(x)['abstract'], paths)
     deposit_article_keys = ["pmid", "journal", "full_title", "pmc",
         "publisher_id", "author_list", "affiliation_list",
         "kwset", "publication_year", "doi"]
@@ -84,11 +84,7 @@ def main(root_dir):
     start = time.time()
     client = datastore.Client()
     kws = []
-    for i, path in enumerate(texts):
-        art_dict = pp.parse_pubmed_xml(path)
-        doc = nlp(unicode(art_dict['abstract']))
-        nounset = nounset_to_list(doc.noun_chunks)
-        # art_dict['kwset'] = nounset
+    for i, doc in enumerate(nlp.pipe(texts, batch_size=50, n_threads=4)):
         all(map(lambda x: kws.append(x), tagged_doc_to_json(doc)))
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
