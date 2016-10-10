@@ -44,6 +44,7 @@ def path_proc(filelist):
 def deposit_article(session, article):
     if article['pmid'] == "":
         article['pmid'] = -1
+    article['publication_year'] = int(article['publication_year'])
     result = session.execute_graph('g.V().has("article", "pmid",\
     _pmid).has("pmc", _pmc).has("doi", _doi).tryNext().orElse(g.addV(label,\
     "article", "pmid",_pmid, "pmc", _pmc, "doi", _doi, "full_title",\
@@ -72,7 +73,7 @@ def deposit_keywords(session, keywords, article):
 
 
 def main(root_dir):
-    cluster_ips = ['10.128.0.2', '10.128.0.5', '10.128.0.4']
+    cluster_ips = ['10.128.0.2', '10.128.0.5', '10.128.0.4', '10.128.0.6']
     auth_provider = DSEPlainTextAuthProvider(
     username=os.environ['CASSANDRA_USER'],
     password=os.environ['CASSANDRA_PASSWORD'])
@@ -105,7 +106,10 @@ def main(root_dir):
         nounset = nounset_to_list(doc.noun_chunks)
         # art_dict['kwset'] = nounset
         tagged_json = tagged_doc_to_json(doc)
-        article = deposit_article(session, art_dict)
+        try:
+            article = deposit_article(session, art_dict)
+        except Exception as e:
+            pass
         #pairs = map(lambda y: {"text": y[0], "tag": y[1]},
         #     set(map(lambda x: (x['text'], x['tag']), tagged_json)))
         #deposit_keywords(session, pairs, article)
