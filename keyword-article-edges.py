@@ -49,6 +49,18 @@ def deposit_keywords(session, keywords):
              "_tag": kw_dict['tag']},
             execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
 
+def associate_keywords_to_articles(session, article_kw_pairs):
+    for kw_art in article_kw_pairs:
+        result = session.execute_graph('if(kw = g.V().has("keyword", "content", \
+            _keyword).has("tag", _tag).tryNext().orElse() != null && art = \
+            g.V().has("article", "pmid", _pmid).has("pmc", _pmc).has("doi", \
+            _doi).tryNext().orElse() != null) {\
+            g.V(kw).addE("occurs_in").to(g.V(art))}', {"_keyword":
+            kw_art[0]['text'], "_tag":  kw[0]['tag'], "_pmid":  kw_art[1][0],
+            "_pmc":  kw_art[1][1], "_doi": kw_art[1][2]},
+            execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
+
+
 
 def main(root_dir):
     cluster_ips = ['10.128.0.2', '10.128.0.5', '10.128.0.4', '10.128.0.6']
@@ -79,7 +91,6 @@ def main(root_dir):
     start = time.time()
     client = datastore.Client()
     kws = []
-    articles = []
     article_kw_pairs = []
     for i, path in enumerate(texts):
         art_dict = pp.parse_pubmed_xml(path)
@@ -89,13 +100,13 @@ def main(root_dir):
             art_dict['pmc'], art_dict['doi']))), tagged_doc_to_json(doc)))
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
-            print(article_pw_pairs)
-        # if i % 2000 == 0:
-        #     pairs = map(lambda y: {"text": y[0], "tag": y[1]},
-        #         set(map(lambda x: (x['text'], x['tag']), kws)))
-        #     associate_keywords_to_articles(session, pairs, articles)
-        #     kws = []
-        #     articles = []
+            print(article_kw_pairs)
+        if i % 2000 == 0:
+            # pairs = map(lambda y: {"text": y[0], "tag": y[1]},
+                # set(map(lambda x: (x['text'], x['tag']), kws)))
+            associate_keywords_to_articles(session, article_kw_pairs)
+            kws = []
+            article_kw_pairs = []
 
 
 
