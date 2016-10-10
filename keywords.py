@@ -2,26 +2,14 @@ import spacy
 # from mem_top import mem_top
 import os
 import functools
-import csv
 import pubmed_parser as pp
 import time
 from google.cloud import datastore
 import sys
 import ujson as json
-from ctypes import c_char_p, cdll
-import zerorpc
 
-
-gremlin = cdll.LoadLibrary('./pylib/libgremlin.so')
-
-def read_wrapper(path):
-    f = open(path, "r")
-    content = f.read()
-    f.close()
-    return content
-
-def extract_abstract(path):
-    return pp.parse_pubmed_xml(path)['abstract']
+from dse.auth import *
+from dse.cluster import *
 
 def nounset_to_list(noun_chunks):
     return list(map(lambda x: x.text_with_ws, noun_chunks))
@@ -53,71 +41,57 @@ def path_proc(filelist):
         filter(lambda x: x.endswith('.nxml'), filelist[-1]))
     return list(paths)
 
+def deposit_keywords(session, keywords, article):
+    for kw_dict in keywords:
+        result = session.execute_graph('g.V().has("keyword", "content", \
+            _keyword).has("tag", _tag).tryNext().orElseGet({return g.addV(label,\
+            "keyword", "content", _keyword, "tag", _tag).next()})', {"_keyword": kw_dict['text'],
+             "_tag": kw_dict['tag'], "_article_id": article.id},
+            execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
+        kw_id = result[0].id
+        eresult = session.execute_graph('if(!g.V(_kw_id).outE("occurs_in").has(id,\
+            _article_id).hasNext()) { g.V(_kw_id).addE("occurs_in").to(\
+            g.V(_article_id)) }', {"_kw_id": kw_id,
+            "_article_id": article.id},execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
+
 
 def main(root_dir):
-    c = zerorpc.Client()
-    c.connect("tcp://127.0.0.1:4242")
-    # gremlin.connect()
+    cluster_ips = ['10.128.0.2', '10.128.0.5', '10.128.0.4', '10.128.0.6']
+    auth_provider = DSEPlainTextAuthProvider(
+    username=os.environ['CASSANDRA_USER'],
+    password=os.environ['CASSANDRA_PASSWORD'])
+    graph_name = "zeitgeist"
+    ep = GraphExecutionProfile(graph_options=GraphOptions(
+        graph_name=graph_name))
+    cluster = Cluster(cluster_ips, auth_provider=auth_provider,
+        execution_profiles={EXEC_PROFILE_GRAPH_DEFAULT: ep}
+    )
+    session = cluster.connect()
     nlp = spacy.load('en')
-
-    # paths = functools.reduce(
+    paths = functools.reduce(
         lambda x,y: x + y, filter(
             lambda x: len(x) > 0, map(
                 lambda entr: path_proc(entr), os.walk(root_dir)
             )
         )
     )
-    texts = map(lambda x: x, paths)
 
+    texts = map(lambda x: x, paths)
     deposit_article_keys = ["pmid", "journal", "full_title", "pmc",
         "publisher_id", "author_list", "affiliation_list",
         "kwset", "publication_year", "doi"]
 
-    # Just do it single-threaded
     start = time.time()
     client = datastore.Client()
     kws = []
-    num_skipped = 0
     for i, path in enumerate(texts):
         art_dict = pp.parse_pubmed_xml(path)
-        doc = nlp(art_dict['abstract'])
+        doc = nlp(unicode(art_dict['abstract']))
         nounset = nounset_to_list(doc.noun_chunks)
         # art_dict['kwset'] = nounset
-        tagged_json = tagged_doc_to_json(doc)
-        try:
-            client.put(
-                generate_tagged_entity(tagged_json, art_dict, client))
-        except e:
-            num_skipped += 1
-        # c.deposit_article(art_dict)
-        # kws.append(tagged_json)
-
-        # deposit article -> ((pmc, pmid, doi), vert_id)
-        # dump Keywords
-        # deposit keyword -> (keyword, vert_id)
-        # sort *.out | uniq >> comb.out
-        # py read arts, read Keywords
-        # for art in arts:
-        #   for keyword in art.keywords:
-        #       addE('occurs_in', keyword.id, art.id)
-        # gremlin.deposit_article(c_char_p(bytes(json.dumps(
-            # { k: art_dict[k] for k in deposit_article_keys }), "utf-8")))
-
-        # Dump noun_chunks as K(art_pmid):V(noun_chunk)
-
-
+        all(map(lambda x: kws.append(x), tagged_doc_to_json(doc)))
         if i % 100 == 0:
             print("Documents per second: {}".format(i / (time.time() - start)))
-            # with open("keywords/{}.json".format(time.time()), "w") as f:
-                # for item in kws:
-                    # for kw in item:
-                        # f.write('"{}", "{}"\n'.format(kw['text'], kw['tag']))
-
-            # print(art_dict.keys())
-            # print(list(doc.noun_chunks))
-            # print(doc.ents)
-            # print(len(doc.ents))
-    print("Number skipped: {}".format(num_skipped))
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
