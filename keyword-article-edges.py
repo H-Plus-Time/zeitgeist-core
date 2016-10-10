@@ -56,7 +56,7 @@ def associate_keywords_to_articles(session, article_kw_pairs):
             g.V().has("article", "pmid", _pmid).has("pmc", _pmc).has("doi", \
             _doi).tryNext().orElse() != null) {\
             g.V(kw).addE("occurs_in").to(g.V(art))}', {"_keyword":
-            kw_art[0]['text'], "_tag":  kw[0]['tag'], "_pmid":  kw_art[1][0],
+            kw_art[0]['text'], "_tag":  kw_art[0]['tag'], "_pmid":  kw_art[1][0],
             "_pmc":  kw_art[1][1], "_doi": kw_art[1][2]},
             execution_profile=EXEC_PROFILE_GRAPH_DEFAULT)
 
