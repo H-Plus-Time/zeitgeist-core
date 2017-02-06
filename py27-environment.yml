@@ -1,6 +1,0 @@
-name: gremlin-compat
-dependencies:
-  - python=2
-  - pip:
-    - zerorpc
-    - cassandra-driver-dse

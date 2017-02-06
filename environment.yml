@@ -1,7 +1,0 @@
-dependencies:
-  - python=3
-  - spacy
-  - ujson
-  - pip:
-    - google-cloud
-    - zerorpc
